@@ -108,4 +108,47 @@ describe("makeRefObj", () => {
   });
 });
 
-describe("formatComments", () => {});
+describe("formatComments", () => {
+  it("returns an empty object when passed an empty array", () => {
+    expect(makeRefObj([])).to.deep.equal({});
+  });
+  it("does not mutate the original array", () => {
+    const input = [];
+    expect(makeRefObj(input)).to.deep.equal({});
+    expect(makeRefObj(input)).to.not.equal(input);
+  });
+  it("returns an of one object with the 'belongs_to' key changed to an 'article_id' key and the value changed, the name of the 'created_by' key changed to 'author", () => {
+    const input = [
+      {
+        belongs_to: "Living in the shadow of a great man",
+        created_by: "Sabrina Spellman"
+      }
+    ];
+    const referenceInput = { "Living in the shadow of a great man": 14 };
+    const actual = formatComments(input, referenceInput);
+    const expected = [{ article_id: 14, author: "Sabrina Spellman" }];
+    expect(actual).to.deep.equal(expected);
+  });
+  it("returns an of multiple objects with the 'belongs_to' key changed to an 'article_id' key and the value changed, the name of the 'created_by' key changed to 'author", () => {
+    const input = [
+      {
+        belongs_to: "Living in the shadow of a great man",
+        created_by: "Sabrina Spellman"
+      },
+      {
+        belongs_to: "Sony Vaio; or, The Laptop",
+        created_by: "Steve Jobs"
+      }
+    ];
+    const referenceInput = {
+      "Living in the shadow of a great man": 14,
+      "Sony Vaio; or, The Laptop": 8
+    };
+    const actual = formatComments(input, referenceInput);
+    const expected = [
+      { article_id: 14, author: "Sabrina Spellman" },
+      { article_id: 8, author: "Steve Jobs" }
+    ];
+    expect(actual).to.deep.equal(expected);
+  });
+});
