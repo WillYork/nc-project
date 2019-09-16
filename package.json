@@ -6,6 +6,8 @@
   "scripts": {
     "setup-dbs": "psql -f ./db/setup.sql",
     "seed": "knex seed:run",
+    "migrate-make": "knex migrate:make",
+    "migrate-latest": "knex migrate:latest",
     "test-utils": "mocha spec/utils.spec.js",
     "test": "mocha spec/app.spec.js"
   },
@@ -23,7 +25,7 @@
   "dependencies": {
     "express": "^4.17.1",
     "knex": "^0.19.4",
-    "psql": "0.0.1"
+    "pg": "^7.12.1"
   },
   "devDependencies": {
     "chai": "^4.2.0",
