@@ -5,7 +5,7 @@ exports.notFoundErrorHandler = (err, req, res, next) => {
 };
 
 exports.badRequestErrorHandler = (err, req, res, next) => {
-  // console.log(err)
+  console.log(err)
   const errorCode = ["42703", "23502", "22P02", "23503"];
   if (errorCode.includes(err.code)) {
     res.status(400).send({ msg: "Bad Request" });
