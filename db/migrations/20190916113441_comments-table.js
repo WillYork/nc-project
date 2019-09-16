@@ -5,7 +5,7 @@ exports.up = knex => {
       commentsTable.integer("article_id").notNullable().references("articles.article_id");
       commentsTable.integer("votes").defaultTo(0);
       commentsTable.timestamp("created_at");
-      commentsTable.string("body").notNullable();
+      commentsTable.text("body").notNullable();
     });
   };
   
