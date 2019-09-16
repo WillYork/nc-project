@@ -11,7 +11,7 @@
     "migrate-latest": "knex migrate:latest",
     "migrate-rollback": "knex migrate:rollback",
     "test-utils": "mocha spec/utils.spec.js",
-    "test": "mocha spec/app.spec.js"
+    "test": "npm run seed-test && mocha spec/app.spec.js"
   },
   "repository": {
     "type": "git",
@@ -31,6 +31,7 @@
   },
   "devDependencies": {
     "chai": "^4.2.0",
+    "chai-sorted": "^0.2.0",
     "mocha": "^6.2.0",
     "supertest": "^4.0.2"
   }
