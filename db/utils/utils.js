@@ -14,7 +14,8 @@ exports.makeRefObj = (arr, key, value) => {
 }
 
 exports.formatComments = (comments, articleRef) => {
-    return comments.map((element) => {
+    return comments.map((oldElement) => {
+      const element = {...oldElement}
         element["article_id"] = articleRef[element["belongs_to"]];
         delete element["belongs_to"];
         element["author"] = element["created_by"]
