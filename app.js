@@ -3,14 +3,15 @@ const app = express();
 const apiRouter = require("./routes/api-router");
 app.use(express.json());
 const {
-  badRequestErrorHandler,
-  internalServerErrorHandler, notFoundErrorHandler
+  sqlErrorHandler,
+  internalServerErrorHandler,
+  customErrorHandler
 } = require("./error-handlers");
 
 app.use("/api", apiRouter);
 
-app.use(notFoundErrorHandler);
-app.use(badRequestErrorHandler);
+app.use(customErrorHandler);
+app.use(sqlErrorHandler);
 app.use(internalServerErrorHandler);
 
 module.exports = app;

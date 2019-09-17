@@ -55,6 +55,11 @@ describe("/api", () => {
             expect(body.user).to.contain.keys(['username', 'avatar_url', 'name']);
           });
       });
+      it('status:404 responds with an error message explaining that the user was not found', () => {
+        return request(app).get("/api/users/qwertyuiop").expect(404).then(({body}) => {
+          expect(body.msg).to.equal("User not found")
+        })
+      });
     });
   });
 });
