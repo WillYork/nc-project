@@ -47,5 +47,29 @@ exports.insertComment = ({ article_id }, comment) => {
     article_id,
     body: body
   };
-  return connection.insert(commentObj, "*").into("comments");
+  return connection
+    .insert(commentObj, "*")
+    .into("comments")
+    .then(comment => {
+      if (comment.length) return comment;
+      else return Promise.reject({ status: 404, msg: "Article not found" });
+    });
+};
+
+exports.selectCommentsByArticleId = ({ article_id }, sort_by, order_by) => {
+  return connection
+    .select("*")
+    .from("comments")
+    .where("article_id", article_id)
+    .orderBy(sort_by || "created_at", order_by || "asc")
+    .then(commentArray => {
+      return commentArray.map(comment => {
+        const newComment = { ...comment };
+        delete newComment.article_id;
+        return newComment;
+      });
+    }).then(comments => {
+        if (comments.length) return comments;
+        else return Promise.reject({ status: 404, msg: "Article not found" });
+    });
 };

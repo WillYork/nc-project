@@ -71,7 +71,7 @@ describe("/api", () => {
   });
   describe("/articles", () => {
     describe("GET", () => {
-      it("status:200 responds with all the articles", () => {
+      it("status:200 responds with all the articles when article ID is not specified", () => {
         return request(app)
           .get("/api/articles")
           .expect(200)
@@ -189,25 +189,138 @@ describe("/api", () => {
           });
       });
     });
-    describe("POST", () => {
-      it("status:201 responds with the comment posted", () => {
-        return request(app)
-          .post("/api/articles/2/comments")
-          .send({
-            username: "rogersop",
-            body: "this here is a comment"
-          })
-          .expect(201)
-          .then(res => {
-            expect(res.body.comment).to.contain.keys([
-              "comment_id",
-              "author",
-              "article_id",
-              "votes",
-              "created_at",
-              "body"
-            ]);
-          });
+    describe("/:article_id/comments", () => {
+      describe("POST", () => {
+        it("status:201 responds with the comment posted", () => {
+          return request(app)
+            .post("/api/articles/2/comments")
+            .send({
+              username: "rogersop",
+              body: "this here is a comment"
+            })
+            .expect(201)
+            .then(res => {
+              expect(res.body.comment).to.contain.keys([
+                "comment_id",
+                "author",
+                "article_id",
+                "votes",
+                "created_at",
+                "body"
+              ]);
+            });
+        });
+        it("status:400 responds with an error message when trying to post a comment using an article ID that does not exist", () => {
+          return request(app)
+            .post("/api/articles/9999/comments")
+            .send({
+              username: "rogersop",
+              body: "this here is a comment"
+            })
+            .expect(404)
+            .then(({ body }) => {
+              expect(body.msg).to.equal("Not found");
+            });
+        });
+        it("status:400 responds with an error message when trying to post a comment with an empty body", () => {
+          return request(app)
+            .post("/api/articles/4/comments")
+            .send({
+              username: "rogersop"
+            })
+            .expect(400)
+            .then(({ body }) => {
+              expect(body.msg).to.equal("Bad Request");
+            });
+        });
+        it("status:400 responds with an error message when trying to post a comment using a non-existant column name", () => {
+          return request(app)
+            .post("/api/articles/4/comments")
+            .send({
+              username: "rogersop",
+              bobby: "this is not going to post"
+            })
+            .expect(400)
+            .then(({ body }) => {
+              expect(body.msg).to.equal("Bad Request");
+            });
+        });
+      });
+      describe("GET", () => {
+        it("status:200 responds with an array of comment objects given the article ID", () => {
+          return request(app)
+            .get("/api/articles/5/comments")
+            .expect(200)
+            .then(({ body }) => {
+              expect(body).to.be.an("array");
+            });
+        });
+        it("status:200 responds with an array of comment objects containg the correct keys given the article ID", () => {
+          return request(app)
+            .get("/api/articles/5/comments")
+            .expect(200)
+            .then(({ body }) => {
+              expect(
+                body.every(comment => {
+                  return expect(comment).to.contain.keys([
+                    "comment_id",
+                    "votes",
+                    "created_at",
+                    "author",
+                    "body"
+                  ]);
+                })
+              ).to.be.true;
+            });
+        });
+        it("status:200 defaults to being sorted by created_at", () => {
+          return request(app)
+            .get("/api/articles/1/comments")
+            .expect(200)
+            .then(({ body }) => {
+              expect(body).to.be.sortedBy("created_at");
+            });
+        });
+        it("status:200 takes a sort by query and sorts the comments (ascending by default)", () => {
+          return request(app)
+            .get("/api/articles/1/comments?sort_by=votes")
+            .expect(200)
+            .then(({ body }) => {
+              expect(body).to.be.sortedBy("votes");
+            });
+        });
+        it("status:200 should sort the array in descending order if instructed to", () => {
+          return request(app)
+            .get("/api/articles/1/comments?sort_by=votes&&order_by=desc")
+            .expect(200)
+            .then(({ body }) => {
+              expect(body).to.be.descendingBy("votes");
+            });
+        });
+        it("status:200 ignores an invalid 'order by' instruction", () => {
+          return request(app)
+            .get("/api/articles/1/comments?order_by=none")
+            .expect(200)
+            .then(({ body }) => {
+              expect(body).to.be.sortedBy("created_at");
+            });
+        });
+        it("status:404 responds with an error message when trying to get comments using an article ID that does not exist", () => {
+          return request(app)
+            .get("/api/articles/9999/comments")
+            .expect(404)
+            .then(({ body }) => {
+              expect(body.msg).to.equal("Article not found");
+            });
+        });
+        it("status:400 for invalid column to sort by", () => {
+          return request(app)
+            .get("/api/articles/1/comments?sort_by=colours")
+            .expect(400)
+            .then(({ body }) => {
+              expect(body.msg).to.equal("Bad Request");
+            });
+        });
       });
     });
   });
