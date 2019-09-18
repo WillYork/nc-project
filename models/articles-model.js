@@ -6,35 +6,15 @@ exports.selectAllArticles = () => {
 
 exports.selectArticleById = article_id => {
   return connection
-    .select("*")
+    .select("articles.*")
     .from("articles")
-    .where("article_id", article_id)
+    .where("articles.article_id", article_id)
+    .leftJoin("comments", "articles.article_id", "comments.article_id")
+    .groupBy("articles.article_id")
+    .count({ comment_count: "comment_id" })
     .then(article => {
       if (article.length) return article;
       else return Promise.reject({ status: 404, msg: "Article not found" });
-    });
-};
-
-exports.selectArticleById2 = article_id => {
-  return connection
-    .select("*")
-    .from("comments")
-    .where("article_id", article_id)
-    .then(comments => {
-      const numberOfComments = comments.length;
-      if (numberOfComments === 0)
-        return Promise.reject({ status: 404, msg: "Article not found" });
-      else
-        return connection
-          .select("*")
-          .from("articles")
-          .where("article_id", article_id);
-    })
-    .then(article => {
-      console.log(article);
-      console.log(numberOfComments);
-      const updatedArticle = (article.comment_count = numberOfComments);
-      return updatedArticle;
     });
 };
 
@@ -58,4 +38,14 @@ exports.updateArticleVotes = (article_id, { inc_votes }) => {
       if (article.length) return article;
       else return Promise.reject({ status: 404, msg: "Article not found" });
     });
+};
+
+exports.insertComment = ({ article_id }, comment) => {
+  const { username, body } = comment;
+  commentObj = {
+    author: username,
+    article_id,
+    body: body
+  };
+  return connection.insert(commentObj, "*").into("comments");
 };
