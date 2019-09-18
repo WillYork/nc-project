@@ -1,7 +1,17 @@
 const { connection } = require("../db/connection");
 
-exports.selectAllArticles = () => {
-  return connection.select("*").from("articles");
+exports.selectAllArticles = (sort_by, order_by, username, topic) => {
+  return connection
+    .select("articles.*")
+    .from("articles")
+    .leftJoin("comments", "articles.article_id", "comments.article_id")
+    .groupBy("articles.article_id")
+    .count({ comment_count: "comment_id" })
+    .orderBy(sort_by || "created_at", order_by || "asc")
+    .modify(query => {
+      if (username) return query.where({ "articles.author": username });
+      if (topic) return query.where({ topic });
+    });
 };
 
 exports.selectArticleById = article_id => {
@@ -21,7 +31,7 @@ exports.selectArticleById = article_id => {
 exports.updateArticle = (article_id, newProp) => {
   return connection("articles")
     .where(article_id)
-    .update({ newProp })
+    .update(newProp)
     .returning("*")
     .then(article => {
       if (article.length) return article;
@@ -68,8 +78,9 @@ exports.selectCommentsByArticleId = ({ article_id }, sort_by, order_by) => {
         delete newComment.article_id;
         return newComment;
       });
-    }).then(comments => {
-        if (comments.length) return comments;
-        else return Promise.reject({ status: 404, msg: "Article not found" });
+    })
+    .then(comments => {
+      if (comments.length) return comments;
+      else return Promise.reject({ status: 404, msg: "Article not found" });
     });
 };
