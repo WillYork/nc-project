@@ -10,8 +10,12 @@ exports.sqlErrorHandler = (err, req, res, next) => {
   if (errorCode.includes(err.code)) {
     res.status(400).send({ msg: "Bad Request" });
   } else if (['23503'].includes(err.code)) {
-    res.status(404).send({ msg: "Not found" });
+    res.status(422).send({ msg: "Unprocessable Entity" });
   } else next(err);
+};
+
+exports.send405Error = (req, res, next) => {
+  res.status(405).send({ msg: 'Method not allowed' });
 };
 
 exports.internalServerErrorHandler = (err, req, res, next) => {

@@ -9,6 +9,30 @@ chai.use(require("chai-sorted"));
 describe("/api", () => {
   beforeEach(() => connection.seed.run());
   after(() => connection.destroy());
+  describe("GET", () => {
+    it("status:200 responds with an object containing information on all of the endpoints", () => {
+      return request(app)
+        .get("/api")
+        .expect(200)
+        .then(({ body }) => {
+          expect(body).to.be.an("object");
+        });
+    });
+  });
+  describe("INVALID METHODS", () => {
+    it("status:405", () => {
+      const invalidMethods = ["patch", "put", "post", "delete"];
+      const methodPromises = invalidMethods.map(method => {
+        return request(app)
+          [method]("/api")
+          .expect(405)
+          .then(({ body: { msg } }) => {
+            expect(msg).to.equal("Method not allowed");
+          });
+      });
+      return Promise.all(methodPromises);
+    });
+  });
   describe("/topics", () => {
     describe("GET", () => {
       it("status:200 responds with an array of topics", () => {
@@ -30,6 +54,20 @@ describe("/api", () => {
               })
             ).to.be.true;
           });
+      });
+    });
+    describe("INVALID METHODS", () => {
+      it("status:405", () => {
+        const invalidMethods = ["patch", "put", "post", "delete"];
+        const methodPromises = invalidMethods.map(method => {
+          return request(app)
+            [method]("/api/topics")
+            .expect(405)
+            .then(({ body: { msg } }) => {
+              expect(msg).to.equal("Method not allowed");
+            });
+        });
+        return Promise.all(methodPromises);
       });
     });
   });
@@ -63,6 +101,20 @@ describe("/api", () => {
           .then(({ body }) => {
             expect(body.msg).to.equal("User not found");
           });
+      });
+    });
+    describe("INVALID METHODS", () => {
+      it("status:405", () => {
+        const invalidMethods = ["patch", "put", "post", "delete"];
+        const methodPromises = invalidMethods.map(method => {
+          return request(app)
+            [method]("/api/users/1")
+            .expect(405)
+            .then(({ body: { msg } }) => {
+              expect(msg).to.equal("Method not allowed");
+            });
+        });
+        return Promise.all(methodPromises);
       });
     });
   });
@@ -161,28 +213,22 @@ describe("/api", () => {
           });
       });
     });
-    describe("/:article_id", () => {
-      describe("GET", () => {
-        it("status:200 responds with all the articles when article ID is not specified", () => {
+    describe("INVALID METHODS", () => {
+      it("status:405", () => {
+        const invalidMethods = ["patch", "put", "post", "delete"];
+        const methodPromises = invalidMethods.map(method => {
           return request(app)
-            .get("/api/articles")
-            .expect(200)
-            .then(({ body }) => {
-              expect(
-                body.articles.every(article => {
-                  return expect(article).to.contain.keys([
-                    "article_id",
-                    "title",
-                    "body",
-                    "votes",
-                    "topic",
-                    "author",
-                    "created_at"
-                  ]);
-                })
-              ).to.be.true;
+            [method]("/api/articles")
+            .expect(405)
+            .then(({ body: { msg } }) => {
+              expect(msg).to.equal("Method not allowed");
             });
         });
+        return Promise.all(methodPromises);
+      });
+    });
+    describe("/:article_id", () => {
+      describe("GET", () => {
         it("status:200 responds with the article object when given the article ID", () => {
           return request(app)
             .get("/api/articles/1")
@@ -209,6 +255,14 @@ describe("/api", () => {
               expect(body.article.article_id).to.equal(1);
             });
         });
+        it("status:400 responds with an error message when trying to get an article with an ID which is of the incorrect datatype", () => {
+          return request(app)
+            .get("/api/articles/not-a-number")
+            .expect(400)
+            .then(({ body }) => {
+              expect(body.msg).to.equal("Bad Request");
+            });
+        });
         it("status:404 responds with an error message when trying to get an article with an ID that does not exist", () => {
           return request(app)
             .get("/api/articles/9999999")
@@ -223,7 +277,7 @@ describe("/api", () => {
           return request(app)
             .patch("/api/articles/4")
             .send({
-              title: 'cars n stuff'
+              title: "cars n stuff"
             })
             .expect(202)
             .then(({ body }) => {
@@ -293,6 +347,20 @@ describe("/api", () => {
             });
         });
       });
+      describe("INVALID METHODS", () => {
+        it("status:405", () => {
+          const invalidMethods = ["put", "post", "delete"];
+          const methodPromises = invalidMethods.map(method => {
+            return request(app)
+              [method]("/api/articles/1")
+              .expect(405)
+              .then(({ body: { msg } }) => {
+                expect(msg).to.equal("Method not allowed");
+              });
+          });
+          return Promise.all(methodPromises);
+        });
+      });
       describe("/comments", () => {
         describe("POST", () => {
           it("status:201 responds with the comment posted", () => {
@@ -303,8 +371,8 @@ describe("/api", () => {
                 body: "this here is a comment"
               })
               .expect(201)
-              .then(res => {
-                expect(res.body.comment).to.contain.keys([
+              .then(({ body }) => {
+                expect(body.comment).to.contain.keys([
                   "comment_id",
                   "author",
                   "article_id",
@@ -314,16 +382,16 @@ describe("/api", () => {
                 ]);
               });
           });
-          it("status:404 responds with an error message when trying to post a comment using an article ID that does not exist", () => {
+          it("status:422 responds with an error message when trying to post a comment using an article ID that is of the correct datatype but does not exist", () => {
             return request(app)
               .post("/api/articles/9999/comments")
               .send({
                 username: "rogersop",
                 body: "this here is a comment"
               })
-              .expect(404)
+              .expect(422)
               .then(({ body }) => {
-                expect(body.msg).to.equal("Not found");
+                expect(body.msg).to.equal("Unprocessable Entity");
               });
           });
           it("status:400 responds with an error message when trying to post a comment using an article ID that is not of the correct datatype", () => {
@@ -359,6 +427,18 @@ describe("/api", () => {
               .expect(400)
               .then(({ body }) => {
                 expect(body.msg).to.equal("Bad Request");
+              });
+          });
+          it("status:422 responds with an error message when trying to post a comment with a username that is of the correct datatype but does not exist", () => {
+            return request(app)
+              .post("/api/articles/4/comments")
+              .send({
+                username: "smallfella",
+                body: "this here is a body"
+              })
+              .expect(422)
+              .then(({ body }) => {
+                expect(body.msg).to.equal("Unprocessable Entity");
               });
           });
         });
@@ -446,6 +526,20 @@ describe("/api", () => {
               });
           });
         });
+        describe("INVALID METHODS", () => {
+          it("status:405", () => {
+            const invalidMethods = ["patch", "put", "delete"];
+            const methodPromises = invalidMethods.map(method => {
+              return request(app)
+                [method]("/api/articles/1/comments")
+                .expect(405)
+                .then(({ body: { msg } }) => {
+                  expect(msg).to.equal("Method not allowed");
+                });
+            });
+            return Promise.all(methodPromises);
+          });
+        });
       });
     });
   });
@@ -455,12 +549,12 @@ describe("/api", () => {
         return request(app)
           .patch("/api/comments/1")
           .send({
-            body: 'this is the new body'
+            body: "this is the new body"
           })
           .expect(202)
           .then(({ body }) => {
             expect(body.comment[0].comment_id).to.equal(1);
-            expect(body.comment[0].body).to.equal('this is the new body');
+            expect(body.comment[0].body).to.equal("this is the new body");
           });
       });
       it("status:202 should update a comment's votes given the ID and respond with the updated comment (increasing votes)", () => {
@@ -557,6 +651,20 @@ describe("/api", () => {
           .then(({ body }) => {
             expect(body.msg).to.equal("Bad Request");
           });
+      });
+    });
+    describe("INVALID METHODS", () => {
+      it("status:405", () => {
+        const invalidMethods = ["get", "put", "post"];
+        const methodPromises = invalidMethods.map(method => {
+          return request(app)
+            [method]("/api/comments/1")
+            .expect(405)
+            .then(({ body: { msg } }) => {
+              expect(msg).to.equal("Method not allowed");
+            });
+        });
+        return Promise.all(methodPromises);
       });
     });
   });

@@ -4,7 +4,8 @@ const apiRouter = require("./routes/api-router");
 const {
   sqlErrorHandler,
   internalServerErrorHandler,
-  customErrorHandler
+  customErrorHandler,
+  send405Error
 } = require("./error-handlers");
 app.use(express.json());
 
@@ -16,6 +17,7 @@ app.all("/*", (req, res, next) => {
 
 app.use(customErrorHandler);
 app.use(sqlErrorHandler);
+app.use(send405Error);
 app.use(internalServerErrorHandler);
 
 module.exports = app;
