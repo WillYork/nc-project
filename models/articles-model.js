@@ -13,7 +13,6 @@ exports.selectAllArticles = (
     .leftJoin("comments", "articles.article_id", "comments.article_id")
     .groupBy("articles.article_id")
     .count({ comment_count: "comment_id" })
-    .count({ total_count: "article_id"})
     .orderBy(sort_by || "created_at", order_by || "asc")
     .limit(limit || 10)
     .modify(query => {
