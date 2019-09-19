@@ -11,13 +11,13 @@ exports.patchComment = (req, res, next) => {
   if (Object.keys(newProp)[0] === "inc_votes") {
     updateCommentVotes(comment_id, newProp)
       .then(comment => {
-        res.status(202).send({ comment });
+        res.status(200).send({ comment });
       })
       .catch(next);
   } else
     updateComment(comment_id, newProp)
       .then(comment => {
-        res.status(202).send({ comment });
+        res.status(200).send({ comment });
       })
       .catch(next);
 };

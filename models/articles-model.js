@@ -1,23 +1,53 @@
 const { connection } = require("../db/connection");
 
-exports.selectAllArticles = (
-  sort_by,
-  order_by,
-  username,
-  topic,
-  limit
-) => {
+checkThingExists = (query, columnName, table) => {
+  console.log(query, columnName, table)
+  return connection
+    .first("*")
+    .from(table)
+    .where({ [columnName]: query })
+    .then(thing => {
+      if (!thing) {
+        return Promise.reject({ status: 404, msg: `${columnName} does not exist` });
+      }
+      return true;
+    });
+};
+
+
+exports.selectAllArticles = (sort_by, order_by, username, topic, limit, p) => {
   return connection
     .select("articles.*")
     .from("articles")
     .leftJoin("comments", "articles.article_id", "comments.article_id")
     .groupBy("articles.article_id")
     .count({ comment_count: "comment_id" })
-    .orderBy(sort_by || "created_at", order_by || "asc")
+    .orderBy(sort_by || "created_at", order_by || "desc")
     .limit(limit || 10)
+    .offset((p - 1) * limit)
     .modify(query => {
+      if (username && topic) {
+        return query.where({ "articles.author": username, topic });
+      }
       if (username) return query.where({ "articles.author": username });
       if (topic) return query.where({ topic });
+    })
+    .then(articles => {
+      if (!articles.length && username) {
+        return Promise.all([
+          articles,
+          checkThingExists(username, "username", "users")
+        ]);
+      } else if (!articles.length && topic) {
+        return Promise.all([
+          articles,
+          checkThingExists(topic, "slug", "topics")
+        ]);
+      }
+      return [articles];
+    })
+    .then(([articles]) => {
+      return articles;
     });
 };
 
@@ -49,7 +79,7 @@ exports.updateArticle = (article_id, newProp) => {
 exports.updateArticleVotes = (article_id, { inc_votes }) => {
   return connection("articles")
     .where(article_id)
-    .increment("votes", inc_votes)
+    .increment("votes", inc_votes || 0)
     .returning("*")
     .then(article => {
       if (article.length) return article;
@@ -64,6 +94,7 @@ exports.insertComment = ({ article_id }, comment) => {
     article_id,
     body: body
   };
+  console.log(commentObj)
   return connection
     .insert(commentObj, "*")
     .into("comments")
@@ -73,21 +104,36 @@ exports.insertComment = ({ article_id }, comment) => {
     });
 };
 
-exports.selectCommentsByArticleId = ({ article_id }, sort_by, order_by) => {
+exports.selectCommentsByArticleId = (
+  { article_id },
+  sort_by,
+  order_by,
+  limit,
+  p
+) => {
   return connection
     .select("*")
     .from("comments")
     .where("article_id", article_id)
-    .orderBy(sort_by || "created_at", order_by || "asc")
-    .then(commentArray => {
-      return commentArray.map(comment => {
+    .orderBy(sort_by || "created_at", order_by || "desc")
+    .limit(limit || 10)
+    .offset((p - 1) * limit)
+    .then(comments => {
+      if (!comments.length && article_id) {
+        return Promise.all([
+          comments,
+          checkThingExists(article_id, "article_id", "articles")
+        ]);
+      }
+      return [comments];
+    })
+    .then(([comments]) => {
+      return comments.map(comment => {
         const newComment = { ...comment };
         delete newComment.article_id;
         return newComment;
       });
-    })
-    .then(comments => {
-      if (comments.length) return comments;
-      else return Promise.reject({ status: 404, msg: "Article not found" });
+    }).then(comments => {
+      return comments
     });
 };

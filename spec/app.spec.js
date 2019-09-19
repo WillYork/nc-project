@@ -153,23 +153,23 @@ describe("/api", () => {
           .get("/api/articles")
           .expect(200)
           .then(({ body }) => {
-            expect(body.articles).to.be.sortedBy("created_at");
+            expect(body.articles).to.be.descendingBy("created_at");
           });
       });
-      it("status:200 takes a 'sort by' query and sorts the comments (ascending by default)", () => {
+      it("status:200 takes a 'sort by' query and sorts the comments (descending by default)", () => {
         return request(app)
           .get("/api/articles?sort_by=title")
           .expect(200)
           .then(({ body }) => {
-            expect(body.articles).to.be.sortedBy("title");
+            expect(body.articles).to.be.descendingBy("title");
           });
       });
-      it("status:200 should sort the array in descending order if instructed to", () => {
+      it("status:200 should sort the array in ascending order if instructed to", () => {
         return request(app)
-          .get("/api/articles?sort_by=title&&order_by=desc")
+          .get("/api/articles?sort_by=title&&order_by=asc")
           .expect(200)
           .then(({ body }) => {
-            expect(body.articles).to.be.descendingBy("title");
+            expect(body.articles).to.be.ascendingBy("title");
           });
       });
       it("status:200 ignores an invalid 'order by' instruction", () => {
@@ -192,14 +192,14 @@ describe("/api", () => {
             ).to.be.true;
           });
       });
-      it("status:200 responds with the articles for a specified topic when passed the username as a query", () => {
+      it("status:200 responds with the articles for a specified topic when passed the topic name as a query", () => {
         return request(app)
-          .get("/api/articles?username=mitch")
+          .get("/api/articles?topic=cats")
           .expect(200)
           .then(({ body }) => {
             expect(
               body.articles.every(article => {
-                return expect(article.topic).to.equal("icellusedkars");
+                return expect(article.topic).to.equal("cats");
               })
             ).to.be.true;
           });
@@ -218,6 +218,39 @@ describe("/api", () => {
           .expect(200)
           .then(({ body }) => {
             expect(body.articles.length).to.equal(5);
+          });
+      });
+      it("status:200 responds with the page specified by the p query", () => {
+        return request(app)
+          .get("/api/articles?sort_by=article_id&&limit=2&&p=2")
+          .expect(200)
+          .then(({ body }) => {
+            expect(body.articles[0].article_id).to.equal(10);
+            expect(body.articles[1].article_id).to.equal(9);
+          });
+      });
+      it("status:200 responds with an empty array when the username exists but has authored no articles", () => {
+        return request(app)
+          .get("/api/articles?username=lurker")
+          .expect(200)
+          .then(({ body }) => {
+            expect(body.articles).to.deep.equal([]);
+          });
+      });
+      it("status:200 responds with an empty array when the topic exists but has no articles", () => {
+        return request(app)
+          .get("/api/articles?topic=paper")
+          .expect(200)
+          .then(({ body }) => {
+            expect(body.articles).to.deep.equal([]);
+          });
+      });
+      it("status:200 responds with an empty array when the topic and username exist but the user has authored no articles under the topic", () => {
+        return request(app)
+          .get("/api/articles?topic=cats&&username=icellusedkars")
+          .expect(200)
+          .then(({ body }) => {
+            expect(body.articles).to.deep.equal([]);
           });
       });
       it("status:400 for invalid column to sort by", () => {
@@ -289,40 +322,40 @@ describe("/api", () => {
         });
       });
       describe("PATCH", () => {
-        it("status:202 should update an article given the ID and respond with the updated article", () => {
+        it("status:200 should update an article given the ID and respond with the updated article", () => {
           return request(app)
             .patch("/api/articles/4")
             .send({
               title: "cars n stuff"
             })
-            .expect(202)
+            .expect(200)
             .then(({ body }) => {
-              expect(body.article[0].article_id).to.equal(4);
-              expect(body.article[0].title).to.equal("cars n stuff");
+              expect(body.article_id).to.equal(4);
+              expect(body.title).to.equal("cars n stuff");
             });
         });
-        it("status:202 should update an article's votes given the ID and respond with the updated article (increasing votes)", () => {
+        it("status:200 should update an article's votes given the ID and respond with the updated article (increasing votes)", () => {
           return request(app)
             .patch("/api/articles/4")
             .send({
               inc_votes: 10
             })
-            .expect(202)
+            .expect(200)
             .then(({ body }) => {
-              expect(body.article[0].article_id).to.equal(4);
-              expect(body.article[0].votes).to.equal(10);
+              expect(body.article_id).to.equal(4);
+              expect(body.votes).to.equal(10);
             });
         });
-        it("status:202 should update an article's votes given the ID and respond with the updated article(decreasing votes)", () => {
+        it("status:200 should update an article's votes given the ID and respond with the updated article(decreasing votes)", () => {
           return request(app)
             .patch("/api/articles/4")
             .send({
               inc_votes: -100
             })
-            .expect(202)
+            .expect(200)
             .then(({ body }) => {
-              expect(body.article[0].article_id).to.equal(4);
-              expect(body.article[0].votes).to.equal(-100);
+              expect(body.article_id).to.equal(4);
+              expect(body.votes).to.equal(-100);
             });
         });
         it("status:404 responds with an error message when trying to update with an ID that does not exist", () => {
@@ -490,23 +523,23 @@ describe("/api", () => {
               .get("/api/articles/1/comments")
               .expect(200)
               .then(({ body }) => {
-                expect(body).to.be.sortedBy("created_at");
+                expect(body).to.be.descendingBy("created_at");
               });
           });
-          it("status:200 takes a sort by query and sorts the comments (ascending by default)", () => {
+          it("status:200 takes a sort by query and sorts the comments (descending by default)", () => {
             return request(app)
               .get("/api/articles/1/comments?sort_by=votes")
               .expect(200)
               .then(({ body }) => {
-                expect(body).to.be.sortedBy("votes");
+                expect(body).to.be.descendingBy("votes");
               });
           });
-          it("status:200 should sort the array in descending order if instructed to", () => {
+          it("status:200 should sort the array in ascending order if instructed to", () => {
             return request(app)
-              .get("/api/articles/1/comments?sort_by=votes&&order_by=desc")
+              .get("/api/articles/1/comments?sort_by=votes&&order_by=asc")
               .expect(200)
               .then(({ body }) => {
-                expect(body).to.be.descendingBy("votes");
+                expect(body).to.be.ascendingBy("votes");
               });
           });
           it("status:200 ignores an invalid 'order by' instruction", () => {
@@ -517,12 +550,45 @@ describe("/api", () => {
                 expect(body).to.be.sortedBy("created_at");
               });
           });
+          it("status:200 responds with 10 comments by default", () => {
+            return request(app)
+              .get("/api/articles/1/comments")
+              .expect(200)
+              .then(({ body }) => {
+                expect(body.length).to.equal(10);
+              });
+          });
+          it("status:200 responds with the number of comments specified in the limit query", () => {
+            return request(app)
+              .get("/api/articles/1/comments?sort_by=comment_id&&limit=5")
+              .expect(200)
+              .then(({ body }) => {
+                expect(body.length).to.equal(5);
+              });
+          });
+          it("status:200 responds with the page specified by the p query", () => {
+            return request(app)
+              .get("/api/articles/1/comments?sort_by=comment_id&&limit=2&&p=2")
+              .expect(200)
+              .then(({ body }) => {
+                expect(body[0].comment_id).to.equal(12);
+                expect(body[1].comment_id).to.equal(11);
+              });
+          });
+          it("status:200 responds with an empty array when the article exists but has no comments", () => {
+            return request(app)
+              .get("/api/articles/7/comments")
+              .expect(200)
+              .then(({ body }) => {
+                expect(body).to.deep.equal([]);
+              });
+          });
           it("status:404 responds with an error message when trying to get comments using an article ID that does not exist", () => {
             return request(app)
               .get("/api/articles/9999/comments")
               .expect(404)
               .then(({ body }) => {
-                expect(body.msg).to.equal("Article not found");
+                expect(body.msg).to.equal("article_id does not exist");
               });
           });
           it("status:400 responds with an error message when trying to get comments using an article ID that is not of the correct datatype", () => {
@@ -561,37 +627,37 @@ describe("/api", () => {
   });
   describe("/comments/:comment_id", () => {
     describe("PATCH", () => {
-      it("status:202 should update a comment given the ID and respond with the updated comment", () => {
+      it("status:200 should update a comment given the ID and respond with the updated comment", () => {
         return request(app)
           .patch("/api/comments/1")
           .send({
             body: "this is the new body"
           })
-          .expect(202)
+          .expect(200)
           .then(({ body }) => {
             expect(body.comment[0].comment_id).to.equal(1);
             expect(body.comment[0].body).to.equal("this is the new body");
           });
       });
-      it("status:202 should update a comment's votes given the ID and respond with the updated comment (increasing votes)", () => {
+      it("status:200 should update a comment's votes given the ID and respond with the updated comment (increasing votes)", () => {
         return request(app)
           .patch("/api/comments/1")
           .send({
             inc_votes: 10
           })
-          .expect(202)
+          .expect(200)
           .then(({ body }) => {
             expect(body.comment[0].comment_id).to.equal(1);
             expect(body.comment[0].votes).to.equal(26);
           });
       });
-      it("status:202 should update a comment's votes given the ID and respond with the updated comment (decreasing votes)", () => {
+      it("status:200 should update a comment's votes given the ID and respond with the updated comment (decreasing votes)", () => {
         return request(app)
           .patch("/api/comments/1")
           .send({
             inc_votes: -1
           })
-          .expect(202)
+          .expect(200)
           .then(({ body }) => {
             expect(body.comment[0].comment_id).to.equal(1);
             expect(body.comment[0].votes).to.equal(15);
