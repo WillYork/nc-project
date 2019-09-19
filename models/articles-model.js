@@ -1,13 +1,21 @@
 const { connection } = require("../db/connection");
 
-exports.selectAllArticles = (sort_by, order_by, username, topic) => {
+exports.selectAllArticles = (
+  sort_by,
+  order_by,
+  username,
+  topic,
+  limit
+) => {
   return connection
     .select("articles.*")
     .from("articles")
     .leftJoin("comments", "articles.article_id", "comments.article_id")
     .groupBy("articles.article_id")
     .count({ comment_count: "comment_id" })
+    .count({ total_count: "article_id"})
     .orderBy(sort_by || "created_at", order_by || "asc")
+    .limit(limit || 10)
     .modify(query => {
       if (username) return query.where({ "articles.author": username });
       if (topic) return query.where({ topic });
