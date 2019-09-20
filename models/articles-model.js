@@ -16,7 +16,7 @@ checkThingExists = (query, columnName, table) => {
     });
 };
 
-exports.selectAllArticles = (sort_by, order_by, username, topic, limit, p) => {
+exports.selectAllArticles = (sort_by, order_by, username, topic, limit = 10, p) => {
   return connection
     .select("articles.*")
     .from("articles")
@@ -24,7 +24,7 @@ exports.selectAllArticles = (sort_by, order_by, username, topic, limit, p) => {
     .groupBy("articles.article_id")
     .count({ comment_count: "comment_id" })
     .orderBy(sort_by || "created_at", order_by || "desc")
-    .limit(limit || 10)
+    .limit(limit)
     .offset((p - 1) * limit)
     .modify(query => {
       if (username && topic) {
