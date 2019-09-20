@@ -262,9 +262,74 @@ describe("/api", () => {
           });
       });
     });
+    describe("POST", () => {
+      it("status:201 responds with the article posted", () => {
+        return request(app)
+          .post("/api/articles")
+          .send({
+            title: "Brand New Article",
+            body: "The body of the new article",
+            topic: "cats",
+            author: "butter_bridge"
+          })
+          .expect(201)
+          .then(({ body: { article } }) => {
+            expect(article).to.contain.keys([
+              "article_id",
+              "title",
+              "body",
+              "votes",
+              "topic",
+              "author",
+              "created_at"
+            ]);
+          });
+      });
+      it("status:400 responds with an error message when trying to post an article with an empty body", () => {
+        return request(app)
+          .post("/api/articles")
+          .send({
+            title: "A Bodyless Article",
+            topic: "cats",
+            author: "butter_bridge"
+          })
+          .expect(400)
+          .then(({ body }) => {
+            expect(body.msg).to.equal("Bad Request");
+          });
+      });
+      it("status:400 responds with an error message when trying to post a comment using a non-existant column names", () => {
+        return request(app)
+          .post("/api/articles")
+          .send({
+            tittle: "Brand New Article",
+            bobby: "This is not going to post",
+            tropic: "cats",
+            arthur: "butter_bridge"
+          })
+          .expect(400)
+          .then(({ body }) => {
+            expect(body.msg).to.equal("Bad Request");
+          });
+      });
+      it("status:422 responds with an error message when trying to post an article with a topic that is of the correct datatype but does not exist", () => {
+        return request(app)
+          .post("/api/articles")
+          .send({
+            title: "A Brand New Articl;e",
+            body: "The body of the new article",
+            topic: "non-existant",
+            author: "butter_bridge"
+          })
+          .expect(422)
+          .then(({ body }) => {
+            expect(body.msg).to.equal("Unprocessable Entity");
+          });
+      });
+    });
     describe("INVALID METHODS", () => {
       it("status:405", () => {
-        const invalidMethods = ["patch", "put", "post", "delete"];
+        const invalidMethods = ["patch", "put", "delete"];
         const methodPromises = invalidMethods.map(method => {
           return request(app)
             [method]("/api/articles")
@@ -396,9 +461,32 @@ describe("/api", () => {
             });
         });
       });
+      describe("DELETE", () => {
+        it("status:204 removes the specified article and returns the status code", () => {
+          return request(app)
+            .delete("/api/articles/1")
+            .expect(204);
+        });
+        it("status:404 responds with an error message when the article ID does not exist", () => {
+          return request(app)
+            .delete("/api/articles/99999")
+            .expect(404)
+            .then(({ body }) => {
+              expect(body.msg).to.equal("Article not found");
+            });
+        });
+        it("status:400 responds with an error message when the article ID is not of the correct datatype", () => {
+          return request(app)
+            .delete("/api/articles/not-a-number")
+            .expect(400)
+            .then(({ body }) => {
+              expect(body.msg).to.equal("Bad Request");
+            });
+        });
+      });
       describe("INVALID METHODS", () => {
         it("status:405", () => {
-          const invalidMethods = ["put", "post", "delete"];
+          const invalidMethods = ["put", "post"];
           const methodPromises = invalidMethods.map(method => {
             return request(app)
               [method]("/api/articles/1")
@@ -420,8 +508,8 @@ describe("/api", () => {
                 body: "this here is a comment"
               })
               .expect(201)
-              .then(({ body }) => {
-                expect(body.comment).to.contain.keys([
+              .then(({ body: { comment } }) => {
+                expect(comment).to.contain.keys([
                   "comment_id",
                   "author",
                   "article_id",
@@ -496,7 +584,7 @@ describe("/api", () => {
             return request(app)
               .get("/api/articles/5/comments")
               .expect(200)
-              .then(({ body: {comments} }) => {
+              .then(({ body: { comments } }) => {
                 expect(comments).to.be.an("array");
               });
           });
@@ -634,8 +722,7 @@ describe("/api", () => {
             body: "this is the new body"
           })
           .expect(200)
-          .then(({ body: {comment} }) => {
-            console.log(comment)
+          .then(({ body: { comment } }) => {
             expect(comment.comment_id).to.equal(1);
             expect(comment.body).to.equal("this is the new body");
           });
@@ -647,7 +734,7 @@ describe("/api", () => {
             inc_votes: 10
           })
           .expect(200)
-          .then(({ body: {comment} }) => {
+          .then(({ body: { comment } }) => {
             expect(comment.comment_id).to.equal(1);
             expect(comment.votes).to.equal(26);
           });
@@ -659,7 +746,7 @@ describe("/api", () => {
             inc_votes: -1
           })
           .expect(200)
-          .then(({ body: {comment} }) => {
+          .then(({ body: { comment } }) => {
             expect(comment.comment_id).to.equal(1);
             expect(comment.votes).to.equal(15);
           });

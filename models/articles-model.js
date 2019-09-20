@@ -88,12 +88,21 @@ exports.updateArticleVotes = (article_id, { inc_votes }) => {
     });
 };
 
+exports.insertArticle = article => {
+  return connection
+    .insert(article, "*")
+    .into("articles")
+    .then(article => {
+      return article;
+    });
+};
+
 exports.insertComment = ({ article_id }, comment) => {
   const { username, body } = comment;
   commentObj = {
     author: username,
     article_id,
-    body: body
+    body
   };
   return connection
     .insert(commentObj, "*")
@@ -136,5 +145,15 @@ exports.selectCommentsByArticleId = (
     })
     .then(comments => {
       return comments;
+    });
+};
+
+exports.removeArticle = article_id => {
+  return connection("articles")
+    .where({ article_id })
+    .del()
+    .then(deleteCount => {
+      if (deleteCount === 0)
+        return Promise.reject({ status: 404, msg: "Article not found" });
     });
 };
