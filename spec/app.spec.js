@@ -634,9 +634,10 @@ describe("/api", () => {
             body: "this is the new body"
           })
           .expect(200)
-          .then(({ body }) => {
-            expect(body.comment[0].comment_id).to.equal(1);
-            expect(body.comment[0].body).to.equal("this is the new body");
+          .then(({ body: {comment} }) => {
+            console.log(comment)
+            expect(comment.comment_id).to.equal(1);
+            expect(comment.body).to.equal("this is the new body");
           });
       });
       it("status:200 should update a comment's votes given the ID and respond with the updated comment (increasing votes)", () => {
@@ -646,9 +647,9 @@ describe("/api", () => {
             inc_votes: 10
           })
           .expect(200)
-          .then(({ body }) => {
-            expect(body.comment[0].comment_id).to.equal(1);
-            expect(body.comment[0].votes).to.equal(26);
+          .then(({ body: {comment} }) => {
+            expect(comment.comment_id).to.equal(1);
+            expect(comment.votes).to.equal(26);
           });
       });
       it("status:200 should update a comment's votes given the ID and respond with the updated comment (decreasing votes)", () => {
@@ -658,9 +659,9 @@ describe("/api", () => {
             inc_votes: -1
           })
           .expect(200)
-          .then(({ body }) => {
-            expect(body.comment[0].comment_id).to.equal(1);
-            expect(body.comment[0].votes).to.equal(15);
+          .then(({ body: {comment} }) => {
+            expect(comment.comment_id).to.equal(1);
+            expect(comment.votes).to.equal(15);
           });
       });
       it("status:404 responds with an error message when trying to update with an ID that does not exist", () => {
