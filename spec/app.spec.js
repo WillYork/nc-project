@@ -39,8 +39,8 @@ describe("/api", () => {
         return request(app)
           .get("/api/topics")
           .expect(200)
-          .then(({ body }) => {
-            expect(body.topics).to.be.an("array");
+          .then(({ body: { topics } }) => {
+            expect(topics).to.be.an("array");
           });
       });
       it("status:200 responds with the correct keys in each topic", () => {
@@ -56,9 +56,46 @@ describe("/api", () => {
           });
       });
     });
+    describe("POST", () => {
+      it("status:201 responds with the topic posted", () => {
+        return request(app)
+          .post("/api/topics")
+          .send({
+            slug: "trains",
+            description: "Not cars"
+          })
+          .expect(201)
+          .then(({ body: { topic } }) => {
+            expect(topic).to.contain.keys(["slug", "description"]);
+          });
+      });
+      it("status:400 responds with an error message when trying to post a topic with an empty description", () => {
+        return request(app)
+          .post("/api/topics")
+          .send({
+            slug: "A Descriptionless Topic"
+          })
+          .expect(400)
+          .then(({ body }) => {
+            expect(body.msg).to.equal("Bad Request");
+          });
+      });
+      it("status:400 responds with an error message when trying to post a topic using a non-existant column name", () => {
+        return request(app)
+          .post("/api/topics")
+          .send({
+            sluggy: "trains",
+            des: "This is not going to post"
+          })
+          .expect(400)
+          .then(({ body }) => {
+            expect(body.msg).to.equal("Bad Request");
+          });
+      });
+    });
     describe("INVALID METHODS", () => {
       it("status:405", () => {
-        const invalidMethods = ["patch", "put", "post", "delete"];
+        const invalidMethods = ["patch", "put", "delete"];
         const methodPromises = invalidMethods.map(method => {
           return request(app)
             [method]("/api/topics")
@@ -71,50 +108,128 @@ describe("/api", () => {
       });
     });
   });
-  describe("/users/:username", () => {
+  describe("/users", () => {
     describe("GET", () => {
-      it("status:200 responds with the user object when given the username", () => {
+      it("status:200 responds with an array of users", () => {
         return request(app)
-          .get("/api/users/rogersop")
+          .get("/api/users")
           .expect(200)
-          .then(({ body }) => {
-            expect(body.user).to.be.an("object");
+          .then(({ body: { users } }) => {
+            expect(users).to.be.an("array");
           });
       });
-      it("status:200 responds with the correct keys in the user object", () => {
+      it("status:200 responds with the correct keys in each user", () => {
         return request(app)
-          .get("/api/users/rogersop")
+          .get("/api/users")
           .expect(200)
           .then(({ body }) => {
-            expect(body.user).to.contain.keys([
-              "username",
-              "avatar_url",
-              "name"
-            ]);
-            expect(body.user.username).to.equal("rogersop");
+            expect(
+              body.users.every(user => {
+                return expect(user).to.contain.keys(["username", "avatar_url", "name"]);
+              })
+            ).to.be.true;
           });
       });
-      it("status:404 responds with an error message when trying to get a user with an username that does not exist", () => {
+    });
+    describe("POST", () => {
+      it("status:201 responds with the user posted", () => {
         return request(app)
-          .get("/api/users/qwertyuiop")
-          .expect(404)
+          .post("/api/users")
+          .send({
+            username: "jezza",
+            avatar_url: "https://i.redd.it/kgibn7hrjkn31.jpg",
+            name: "Jeremiah Cotswald"
+          })
+          .expect(201)
+          .then(({ body: { user } }) => {
+            expect(user).to.contain.keys(["username", "avatar_url", "name"]);
+          });
+      });
+      it("status:400 responds with an error message when trying to post a user with an empty input", () => {
+        return request(app)
+          .post("/api/users")
+          .send({
+            username: "jezza",
+            avatar_url: "https://i.redd.it/kgibn7hrjkn31.jpg"
+          })
+          .expect(400)
           .then(({ body }) => {
-            expect(body.msg).to.equal("User not found");
+            expect(body.msg).to.equal("Bad Request");
+          });
+      });
+      it("status:400 responds with an error message when trying to post a user using non-existant column names", () => {
+        return request(app)
+          .post("/api/users")
+          .send({
+            usernom: "jezza",
+            cat_picture: "https://i.redd.it/kgibn7hrjkn31.jpg",
+            nom: "Jeremiah Cotswald"
+          })
+          .expect(400)
+          .then(({ body }) => {
+            expect(body.msg).to.equal("Bad Request");
           });
       });
     });
     describe("INVALID METHODS", () => {
       it("status:405", () => {
-        const invalidMethods = ["patch", "put", "post", "delete"];
+        const invalidMethods = ["patch", "put", "delete"];
         const methodPromises = invalidMethods.map(method => {
           return request(app)
-            [method]("/api/users/1")
+            [method]("/api/users")
             .expect(405)
             .then(({ body: { msg } }) => {
               expect(msg).to.equal("Method not allowed");
             });
         });
         return Promise.all(methodPromises);
+      });
+    });
+    describe("/:username", () => {
+      describe("GET", () => {
+        it("status:200 responds with the user object when given the username", () => {
+          return request(app)
+            .get("/api/users/rogersop")
+            .expect(200)
+            .then(({ body }) => {
+              expect(body.user).to.be.an("object");
+            });
+        });
+        it("status:200 responds with the correct keys in the user object", () => {
+          return request(app)
+            .get("/api/users/rogersop")
+            .expect(200)
+            .then(({ body }) => {
+              expect(body.user).to.contain.keys([
+                "username",
+                "avatar_url",
+                "name"
+              ]);
+              expect(body.user.username).to.equal("rogersop");
+            });
+        });
+        it("status:404 responds with an error message when trying to get a user with an username that does not exist", () => {
+          return request(app)
+            .get("/api/users/qwertyuiop")
+            .expect(404)
+            .then(({ body }) => {
+              expect(body.msg).to.equal("User not found");
+            });
+        });
+      });
+      describe("INVALID METHODS", () => {
+        it("status:405", () => {
+          const invalidMethods = ["patch", "put", "post", "delete"];
+          const methodPromises = invalidMethods.map(method => {
+            return request(app)
+              [method]("/api/users/1")
+              .expect(405)
+              .then(({ body: { msg } }) => {
+                expect(msg).to.equal("Method not allowed");
+              });
+          });
+          return Promise.all(methodPromises);
+        });
       });
     });
   });
@@ -298,7 +413,7 @@ describe("/api", () => {
             expect(body.msg).to.equal("Bad Request");
           });
       });
-      it("status:400 responds with an error message when trying to post a comment using a non-existant column names", () => {
+      it("status:400 responds with an error message when trying to post an article using non-existant column names", () => {
         return request(app)
           .post("/api/articles")
           .send({
