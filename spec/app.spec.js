@@ -329,9 +329,9 @@ describe("/api", () => {
               title: "cars n stuff"
             })
             .expect(200)
-            .then(({ body }) => {
-              expect(body.article_id).to.equal(4);
-              expect(body.title).to.equal("cars n stuff");
+            .then(({ body: { article } }) => {
+              expect(article.article_id).to.equal(4);
+              expect(article.title).to.equal("cars n stuff");
             });
         });
         it("status:200 should update an article's votes given the ID and respond with the updated article (increasing votes)", () => {
@@ -341,9 +341,9 @@ describe("/api", () => {
               inc_votes: 10
             })
             .expect(200)
-            .then(({ body }) => {
-              expect(body.article_id).to.equal(4);
-              expect(body.votes).to.equal(10);
+            .then(({ body: { article } }) => {
+              expect(article.article_id).to.equal(4);
+              expect(article.votes).to.equal(10);
             });
         });
         it("status:200 should update an article's votes given the ID and respond with the updated article(decreasing votes)", () => {
@@ -353,9 +353,9 @@ describe("/api", () => {
               inc_votes: -100
             })
             .expect(200)
-            .then(({ body }) => {
-              expect(body.article_id).to.equal(4);
-              expect(body.votes).to.equal(-100);
+            .then(({ body: { article } }) => {
+              expect(article.article_id).to.equal(4);
+              expect(article.votes).to.equal(-100);
             });
         });
         it("status:404 responds with an error message when trying to update with an ID that does not exist", () => {
@@ -496,17 +496,17 @@ describe("/api", () => {
             return request(app)
               .get("/api/articles/5/comments")
               .expect(200)
-              .then(({ body }) => {
-                expect(body).to.be.an("array");
+              .then(({ body: {comments} }) => {
+                expect(comments).to.be.an("array");
               });
           });
           it("status:200 responds with an array of comment objects containg the correct keys given the article ID", () => {
             return request(app)
               .get("/api/articles/5/comments")
               .expect(200)
-              .then(({ body }) => {
+              .then(({ body: { comments } }) => {
                 expect(
-                  body.every(comment => {
+                  comments.every(comment => {
                     return expect(comment).to.contain.keys([
                       "comment_id",
                       "votes",
@@ -522,65 +522,65 @@ describe("/api", () => {
             return request(app)
               .get("/api/articles/1/comments")
               .expect(200)
-              .then(({ body }) => {
-                expect(body).to.be.descendingBy("created_at");
+              .then(({ body: { comments } }) => {
+                expect(comments).to.be.descendingBy("created_at");
               });
           });
           it("status:200 takes a sort by query and sorts the comments (descending by default)", () => {
             return request(app)
               .get("/api/articles/1/comments?sort_by=votes")
               .expect(200)
-              .then(({ body }) => {
-                expect(body).to.be.descendingBy("votes");
+              .then(({ body: { comments } }) => {
+                expect(comments).to.be.descendingBy("votes");
               });
           });
           it("status:200 should sort the array in ascending order if instructed to", () => {
             return request(app)
               .get("/api/articles/1/comments?sort_by=votes&&order_by=asc")
               .expect(200)
-              .then(({ body }) => {
-                expect(body).to.be.ascendingBy("votes");
+              .then(({ body: { comments } }) => {
+                expect(comments).to.be.ascendingBy("votes");
               });
           });
           it("status:200 ignores an invalid 'order by' instruction", () => {
             return request(app)
               .get("/api/articles/1/comments?order_by=none")
               .expect(200)
-              .then(({ body }) => {
-                expect(body).to.be.sortedBy("created_at");
+              .then(({ body: { comments } }) => {
+                expect(comments).to.be.sortedBy("created_at");
               });
           });
           it("status:200 responds with 10 comments by default", () => {
             return request(app)
               .get("/api/articles/1/comments")
               .expect(200)
-              .then(({ body }) => {
-                expect(body.length).to.equal(10);
+              .then(({ body: { comments } }) => {
+                expect(comments.length).to.equal(10);
               });
           });
           it("status:200 responds with the number of comments specified in the limit query", () => {
             return request(app)
               .get("/api/articles/1/comments?sort_by=comment_id&&limit=5")
               .expect(200)
-              .then(({ body }) => {
-                expect(body.length).to.equal(5);
+              .then(({ body: { comments } }) => {
+                expect(comments.length).to.equal(5);
               });
           });
           it("status:200 responds with the page specified by the p query", () => {
             return request(app)
               .get("/api/articles/1/comments?sort_by=comment_id&&limit=2&&p=2")
               .expect(200)
-              .then(({ body }) => {
-                expect(body[0].comment_id).to.equal(12);
-                expect(body[1].comment_id).to.equal(11);
+              .then(({ body: { comments } }) => {
+                expect(comments[0].comment_id).to.equal(12);
+                expect(comments[1].comment_id).to.equal(11);
               });
           });
           it("status:200 responds with an empty array when the article exists but has no comments", () => {
             return request(app)
               .get("/api/articles/7/comments")
               .expect(200)
-              .then(({ body }) => {
-                expect(body).to.deep.equal([]);
+              .then(({ body: { comments } }) => {
+                expect(comments).to.deep.equal([]);
               });
           });
           it("status:404 responds with an error message when trying to get comments using an article ID that does not exist", () => {

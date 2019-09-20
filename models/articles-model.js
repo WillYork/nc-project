@@ -1,19 +1,20 @@
 const { connection } = require("../db/connection");
 
 checkThingExists = (query, columnName, table) => {
-  console.log(query, columnName, table)
   return connection
     .first("*")
     .from(table)
     .where({ [columnName]: query })
     .then(thing => {
       if (!thing) {
-        return Promise.reject({ status: 404, msg: `${columnName} does not exist` });
+        return Promise.reject({
+          status: 404,
+          msg: `${columnName} does not exist`
+        });
       }
       return true;
     });
 };
-
 
 exports.selectAllArticles = (sort_by, order_by, username, topic, limit, p) => {
   return connection
@@ -94,7 +95,6 @@ exports.insertComment = ({ article_id }, comment) => {
     article_id,
     body: body
   };
-  console.log(commentObj)
   return connection
     .insert(commentObj, "*")
     .into("comments")
@@ -133,7 +133,8 @@ exports.selectCommentsByArticleId = (
         delete newComment.article_id;
         return newComment;
       });
-    }).then(comments => {
-      return comments
+    })
+    .then(comments => {
+      return comments;
     });
 };
