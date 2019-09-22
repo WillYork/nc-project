@@ -125,7 +125,11 @@ describe("/api", () => {
           .then(({ body }) => {
             expect(
               body.users.every(user => {
-                return expect(user).to.contain.keys(["username", "avatar_url", "name"]);
+                return expect(user).to.contain.keys([
+                  "username",
+                  "avatar_url",
+                  "name"
+                ]);
               })
             ).to.be.true;
           });
@@ -374,6 +378,22 @@ describe("/api", () => {
           .expect(400)
           .then(({ body }) => {
             expect(body.msg).to.equal("Bad Request");
+          });
+      });
+      it("status:400 for an invalid page query", () => {
+        return request(app)
+          .get("/api/articles?p=-1")
+          .expect(400)
+          .then(({ body }) => {
+            expect(body.msg).to.equal("The page must be a positive integer" );
+          });
+      });
+      it("status:400 for an invalid limit query", () => {
+        return request(app)
+          .get("/api/articles?limit=-1")
+          .expect(400)
+          .then(({ body }) => {
+            expect(body.msg).to.equal("The limit must be a positive integer");
           });
       });
     });
