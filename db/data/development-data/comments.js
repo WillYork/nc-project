@@ -73,7 +73,7 @@ module.exports = [
     body: 'Iure cum non veritatis dolore corrupti deserunt perferendis molestiae. Voluptatem ullam qui aut voluptatem. Magnam quo ut rem nobis quibusdam. Assumenda ex laboriosam ut ea explicabo.',
     belongs_to: 'Sunday league football',
     created_by: 'happyamy2016',
-    votes: 2,
+    votes: 3,
     created_at: 1501187675733,
   },
   {
