@@ -28,7 +28,7 @@ totalArticleCount = (username, topic) => {
       if (topic) return query.where({ topic });
     })
     .then(articles => {
-      return {total_count: articles.length};
+      return  articles.length ;
     });
 };
 
@@ -40,7 +40,8 @@ exports.selectAllArticles = (
   limit = 10,
   p
 ) => {
-  return connection
+  const totalCountPromise = totalArticleCount(username, topic);
+  const articlesPromise = connection
     .select("articles.*")
     .from("articles")
     .leftJoin("comments", "articles.article_id", "comments.article_id")
@@ -55,8 +56,9 @@ exports.selectAllArticles = (
       }
       if (username) return query.where({ "articles.author": username });
       if (topic) return query.where({ topic });
-    })
-    .then(articles => {
+    });
+  return Promise.all([articlesPromise, totalCountPromise]).then(
+    ([articles, total_count]) => {
       if (!articles.length && username) {
         return Promise.all([
           articles,
@@ -68,11 +70,9 @@ exports.selectAllArticles = (
           checkThingExists(topic, "slug", "topics")
         ]);
       }
-      return [articles];
-    })
-    .then(([articles]) => {
-      return articles;
-    });
+      return { articles, total_count };
+    }
+  )
 };
 
 exports.selectArticleById = article_id => {

@@ -4,7 +4,7 @@ exports.up = knex => {
       commentsTable.string("author").notNullable().references("users.username");
       commentsTable.integer("article_id").notNullable().references("articles.article_id").onDelete('CASCADE');
       commentsTable.integer("votes").defaultTo(0);
-      commentsTable.timestamp("created_at");
+      commentsTable.timestamp("created_at").defaultTo(knex.fn.now());
       commentsTable.text("body").notNullable();
     });
   };

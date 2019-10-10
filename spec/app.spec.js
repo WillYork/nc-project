@@ -243,17 +243,17 @@ describe("/api", () => {
         return request(app)
           .get("/api/articles")
           .expect(200)
-          .then(({ body }) => {
-            expect(body.articles).to.be.an("array");
+          .then(({body: {articles: {articles}}}) => {
+            expect(articles).to.be.an("array");
           });
       });
       it("status:200 responds with the correct keys in each article", () => {
         return request(app)
           .get("/api/articles")
           .expect(200)
-          .then(({ body }) => {
+          .then(({body: {articles: {articles}}}) => {
             expect(
-              body.articles.every(article => {
+              articles.every(article => {
                 return expect(article).to.contain.keys([
                   "author",
                   "title",
@@ -271,41 +271,41 @@ describe("/api", () => {
         return request(app)
           .get("/api/articles")
           .expect(200)
-          .then(({ body }) => {
-            expect(body.articles).to.be.descendingBy("created_at");
+          .then(({body: {articles: {articles}}}) => {
+            expect(articles).to.be.descendingBy("created_at");
           });
       });
       it("status:200 takes a 'sort by' query and sorts the comments (descending by default)", () => {
         return request(app)
           .get("/api/articles?sort_by=title")
           .expect(200)
-          .then(({ body }) => {
-            expect(body.articles).to.be.descendingBy("title");
+          .then(({body: {articles: {articles}}}) => {
+            expect(articles).to.be.descendingBy("title");
           });
       });
       it("status:200 should sort the array in ascending order if instructed to", () => {
         return request(app)
           .get("/api/articles?sort_by=title&&order_by=asc")
           .expect(200)
-          .then(({ body }) => {
-            expect(body.articles).to.be.ascendingBy("title");
+          .then(({body: {articles: {articles}}}) => {
+            expect(articles).to.be.ascendingBy("title");
           });
       });
       it("status:200 ignores an invalid 'order by' instruction", () => {
         return request(app)
           .get("/api/articles?order_by=none")
           .expect(200)
-          .then(({ body }) => {
-            expect(body.articles).to.be.sortedBy("created_at");
+          .then(({body: {articles: {articles}}}) => {
+            expect(articles).to.be.sortedBy("created_at");
           });
       });
       it("status:200 responds with the articles by a specified author when passed the username as a query", () => {
         return request(app)
           .get("/api/articles?username=icellusedkars")
           .expect(200)
-          .then(({ body }) => {
+          .then(({body: {articles: {articles}}}) => {
             expect(
-              body.articles.every(article => {
+              articles.every(article => {
                 return expect(article.author).to.equal("icellusedkars");
               })
             ).to.be.true;
@@ -315,9 +315,9 @@ describe("/api", () => {
         return request(app)
           .get("/api/articles?topic=cats")
           .expect(200)
-          .then(({ body }) => {
+          .then(({body: {articles: {articles}}}) => {
             expect(
-              body.articles.every(article => {
+              articles.every(article => {
                 return expect(article.topic).to.equal("cats");
               })
             ).to.be.true;
@@ -327,50 +327,55 @@ describe("/api", () => {
         return request(app)
           .get("/api/articles")
           .expect(200)
-          .then(({ body }) => {
-            expect(body.articles.length).to.equal(10);
+          .then(({body: {articles: {articles}}}) => {
+            expect(articles.length).to.equal(10);
           });
       });
       it("status:200 responds with the number of articles specified in the limit query", () => {
         return request(app)
           .get("/api/articles?limit=5")
           .expect(200)
-          .then(({ body }) => {
-            expect(body.articles.length).to.equal(5);
+          .then(({body: {articles: {articles}}}) => {
+            expect(articles.length).to.equal(5);
           });
       });
       it("status:200 responds with the page specified by the p query", () => {
         return request(app)
           .get("/api/articles?sort_by=article_id&&limit=2&&p=2")
           .expect(200)
-          .then(({ body }) => {
-            expect(body.articles[0].article_id).to.equal(10);
-            expect(body.articles[1].article_id).to.equal(9);
+          .then(({body: {articles: {articles}}}) => {
+            expect(articles[0].article_id).to.equal(10);
+            expect(articles[1].article_id).to.equal(9);
           });
       });
       it("status:200 responds with an empty array when the username exists but has authored no articles", () => {
         return request(app)
           .get("/api/articles?username=lurker")
           .expect(200)
-          .then(({ body }) => {
-            expect(body.articles).to.deep.equal([]);
+          .then(({body: {articles}}) => {
+            expect(articles[0]).to.deep.equal([]);
           });
       });
       it("status:200 responds with an empty array when the topic exists but has no articles", () => {
         return request(app)
           .get("/api/articles?topic=paper")
           .expect(200)
-          .then(({ body }) => {
-            expect(body.articles).to.deep.equal([]);
+          .then(({body: {articles}}) => {
+            expect(articles[0]).to.deep.equal([]);
           });
       });
       it("status:200 responds with an empty array when the topic and username exist but the user has authored no articles under the topic", () => {
         return request(app)
           .get("/api/articles?topic=cats&&username=icellusedkars")
           .expect(200)
-          .then(({ body }) => {
-            expect(body.articles).to.deep.equal([]);
+          .then(({body: {articles}}) => {
+            expect(articles[0]).to.deep.equal([]);
           });
+      });
+      it('status:200 responds with a total_count column giving the total number of articles with filters applied', () => {
+        return request(app).get("/api/articles").expect(200).then(({body: {articles}}) => {
+          expect(articles.total_count).to.equal(12)
+        })
       });
       it("status:400 for invalid column to sort by", () => {
         return request(app)
