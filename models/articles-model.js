@@ -41,7 +41,7 @@ exports.selectAllArticles = (
   p
 ) => {
   return connection
-    .select("articles.*", totalArticleCount(username, topic))
+    .select("articles.*")
     .from("articles")
     .leftJoin("comments", "articles.article_id", "comments.article_id")
     .groupBy("articles.article_id")
