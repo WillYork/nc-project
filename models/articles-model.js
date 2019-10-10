@@ -16,9 +16,32 @@ checkThingExists = (query, columnName, table) => {
     });
 };
 
-exports.selectAllArticles = (sort_by, order_by, username, topic, limit = 10, p) => {
+totalArticleCount = (username, topic) => {
   return connection
-    .select("articles.*")
+    .select("*")
+    .from("articles")
+    .modify(query => {
+      if (username && topic) {
+        return query.where({ "articles.author": username, topic });
+      }
+      if (username) return query.where({ "articles.author": username });
+      if (topic) return query.where({ topic });
+    })
+    .then(articles => {
+      return {total_count: articles.length};
+    });
+};
+
+exports.selectAllArticles = (
+  sort_by,
+  order_by,
+  username,
+  topic,
+  limit = 10,
+  p
+) => {
+  return connection
+    .select("articles.*", totalArticleCount(username, topic))
     .from("articles")
     .leftJoin("comments", "articles.article_id", "comments.article_id")
     .groupBy("articles.article_id")
